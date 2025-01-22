@@ -156,6 +156,9 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:pi_s5/ArtisanInformation.dart';
+import 'package:pi_s5/LoginPage.dart';
+import 'package:pi_s5/RegisterArtisanPage.dart';
 import 'SignupPage.dart';
 import 'AcceuilPage.dart';
 
@@ -171,8 +174,11 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => HomePage(),
-        '/signup': (context) => SignupPage(),
-        '/Acceuil': (context) => AccueilPage()// Route vers la page d'inscription
+        '/signup': (context) => RegisterPage(),
+        '/Acceuil': (context) => AccueilPage(),
+        '/login': (context) => LoginPage(),
+        '/artisan': (context) => RegisterArtisanPage(),
+        '/info': (context) => ArtisanInformationPage()
       },
     );
   }
@@ -266,7 +272,7 @@ class HomePage extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: OutlinedButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/Acceuil');// Action pour le bouton
+                        Navigator.pushNamed(context, '/artisan');// Action pour le bouton
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: Colors.green, width: 2),

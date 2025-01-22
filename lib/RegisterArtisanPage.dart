@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterArtisanPage extends StatefulWidget {
   @override
-  _RegisterPageState createState() => _RegisterPageState();
+  _RegisterArtisanPageState createState() => _RegisterArtisanPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterArtisanPageState extends State<RegisterArtisanPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
@@ -19,63 +20,68 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isLoading = false;
   bool termsAccepted = false;
 
-  Future<void> register() async {
-    if (!_formKey.currentState!.validate() || !termsAccepted) {
-      // Si les champs ne sont pas valides ou si les termes ne sont pas acceptés
-      return;
-    }
-
-    if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Les mots de passe ne correspondent pas")),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    final String username =
-        "${firstNameController.text.trim()} ${lastNameController.text.trim()}";
-    final String phone = phoneController.text.trim();
-    final String password = passwordController.text.trim();
-
-    final url = Uri.parse("http://10.0.2.2:8000/register/");
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: json.encode({
-          "username": username,
-          "phone": phone,
-          "password": password,
-          "confirm_password": password,
-        }),
-      );
-
-      final responseBody = json.decode(response.body);
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Inscription réussie")),
-        );
-        Navigator.pushReplacementNamed(context, '/login');
-      } else {
-        final errorMessage = responseBody['message'] ?? "Une erreur inconnue s'est produite";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur: $errorMessage")),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur réseau : $e")),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+ Future<void> register() async {
+  if (!_formKey.currentState!.validate() || !termsAccepted) {
+    return;
   }
+
+  if (passwordController.text != confirmPasswordController.text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Les mots de passe ne correspondent pas")),
+    );
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  final String username =
+      "${firstNameController.text.trim()} ${lastNameController.text.trim()}";
+  final String phone = phoneController.text.trim();
+  final String password = passwordController.text.trim();
+
+  final url = Uri.parse("http://10.0.2.2:8000/register/");
+  try {
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: json.encode({
+        "username": username,
+        "phone": phone,
+        "password": password,
+        "confirm_password": password,
+        "user_type": "artisan",
+      }),
+    );
+
+    final responseBody = json.decode(response.body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      // Save the `id_u` from the response to local storage
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setInt('user_id', responseBody['id_u']);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Inscription réussie")),
+      );
+      Navigator.pushReplacementNamed(context, '/info');
+    } else {
+      final errorMessage = responseBody['message'] ?? "Une erreur inconnue s'est produite";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur: $errorMessage")),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Erreur réseau : $e")),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   const SizedBox(height: 50),
                   const Text(
-                    "Créer un compte",
+                    "Créer un compte Artisan",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
