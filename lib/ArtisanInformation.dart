@@ -86,62 +86,83 @@ class _ArtisanInformationPageState extends State<ArtisanInformationPage> {
           }
         });
       } else {
-        showSnackbar("Aucune image sélectionnée.");
+        print("Aucune image sélectionnée.");
       }
     } else {
-      showSnackbar("Permission refusée.");
+      print("Permission refusée.");
     }
   }
 
-  Future<void> saveArtisanInformation() async {
-    if (!_formKey.currentState!.validate()) return;
+ Future<void> saveArtisanInformation() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id') ?? 0;
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getInt('user_id') ?? 0;
 
-    if (userId == 0) {
-      showSnackbar("Utilisateur non trouvé dans le stockage local.");
-      return;
+  if (userId == 0) {
+    showSnackbar("Utilisateur non trouvé dans le stockage local.");
+    return;
+  }
+
+  if (photo == null || idCardImage == null) {
+    showSnackbar("Veuillez ajouter une photo et une carte d'identité.");
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  final url = Uri.parse("http://10.0.2.2:8000/api/Artisan/");
+  final request = http.MultipartRequest('POST', url);
+
+  // Add fields
+  request.fields['user'] = userId.toString();
+  request.fields['NNI'] = nniController.text.trim();
+ for (var service in selectedServices) {
+  request.fields['services'] = service.toString();
+}
+
+// Add service areas as separate fields
+for (var area in selectedServiceAreas) {
+  request.fields['service_areas'] = area.toString();
+}
+
+  // Add files
+  request.files.add(await http.MultipartFile.fromPath('photo', photo!.path));
+  request.files.add(await http.MultipartFile.fromPath('id_card_image', idCardImage!.path));
+
+  print("Champs envoyés : ${request.fields}");
+  print("Photo : ${photo!.path}");
+  print("Carte d'identité : ${idCardImage!.path}");
+
+  try {
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    print("Statut de la réponse: ${response.statusCode}");
+    print("Corps de la réponse: $responseBody");
+
+    if (response.statusCode == 201) {
+      showSnackbar("Informations enregistrées avec succès.");
+      Navigator.pushReplacementNamed(context, '/login');
+    } else {
+      final errorMessage = json.decode(responseBody)['message'] ?? "Erreur inconnue.";
+      showSnackbar("Erreur: $errorMessage");
     }
-
-    if (photo == null || idCardImage == null) {
-      showSnackbar("Veuillez ajouter une photo et une carte d'identité.");
-      return;
-    }
-
+  } catch (e) {
+    showSnackbar("Erreur réseau: $e");
+  } finally {
     setState(() {
-      isLoading = true;
+      isLoading = false;
     });
-
-    final url = Uri.parse("http://10.0.2.2:8000/api/Artisan/");
-    final request = http.MultipartRequest('POST', url);
-
-    request.fields['user'] = userId.toString();
-    request.fields['NNI'] = nniController.text.trim();
-    request.fields['services'] = json.encode(selectedServices);
-    request.fields['service_areas'] = json.encode(selectedServiceAreas);
-
-    request.files.add(await http.MultipartFile.fromPath('photo', photo!.path));
-    request.files.add(await http.MultipartFile.fromPath('id_card_image', idCardImage!.path));
-
-    try {
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
-
-      if (response.statusCode == 201) {
-        showSnackbar("Informations enregistrées avec succès.");
-        Navigator.pushReplacementNamed(context, '/login');
-      } else {
-        final errorMessage = json.decode(responseBody)['message'] ?? "Erreur inconnue.";
-        showSnackbar("Erreur: $errorMessage");
-      }
-    } catch (e) {
-      showSnackbar("Erreur réseau: $e");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+  }
+}
+  Future<void> showLocalStorageContents() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.getKeys().forEach((key) {
+      print('$key: ${prefs.get(key)}');
+    });
   }
 
   @override
@@ -211,6 +232,7 @@ class _ArtisanInformationPageState extends State<ArtisanInformationPage> {
                       ? CircularProgressIndicator(color: Colors.white)
                       : Text("Enregistrer"),
                 ),
+               
               ],
             ),
           ),
