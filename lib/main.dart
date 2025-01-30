@@ -161,7 +161,7 @@ import 'package:pi_s5/LoginPage.dart';
 import 'package:pi_s5/RegisterArtisanPage.dart';
 import 'SignupPage.dart';
 import 'AcceuilPage.dart';
-
+import 'artisant.dart';
 void main() {
   runApp(MyApp());
 }
@@ -173,8 +173,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => HomePage(),
-        '/signup': (context) => RegisterPage(),
+        
+        '/': (context) => ArtisanPage(),
+        // '/': (context) => ArtisanPage(),
         '/Acceuil': (context) => AccueilPage(),
         '/login': (context) => LoginPage(),
         '/artisan': (context) => RegisterArtisanPage(),
